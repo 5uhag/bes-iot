@@ -20,6 +20,7 @@ type Props = {
   setRunning: (r: boolean) => void;
   setError: (msg: string | null) => void;
   setModelsReady: (ready: boolean) => void;
+  onLog?: (msg: string) => void;
 };
 
 const MOOD_WINDOW_MS = 60_000;
@@ -43,8 +44,10 @@ export default function CameraFeed({
   setRunning,
   setError,
   setModelsReady,
+  onLog,
 }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const log = useCallback((msg: string) => onLog?.(msg), [onLog]);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -95,6 +98,7 @@ export default function CameraFeed({
     if (shouldDetect) {
       result = await detectEmotion(video);
       if (result) {
+        log(`detect: ${result.dominant} ${(result.scores[result.dominant] ?? 0).toFixed(1)}%`);
         onEmotion(result);
         const confidence = result.scores[result.dominant] ?? 0;
         const entry: MoodEntry = {
@@ -106,6 +110,8 @@ export default function CameraFeed({
           (e) => e.timestamp > Date.now() - MOOD_WINDOW_MS
         );
         onMoodHistory(historyRef.current);
+      } else {
+        log("detect: no face in frame");
       }
     }
 
@@ -162,6 +168,7 @@ export default function CameraFeed({
     onEmotion,
     onMoodHistory,
     drawOverlay,
+    log,
   ]);
 
   const processIpFrame = useCallback(async () => {
@@ -177,6 +184,7 @@ export default function CameraFeed({
     if (shouldDetect) {
       result = await detectEmotion(canvas);
       if (result) {
+        log(`detect(ip): ${result.dominant} ${(result.scores[result.dominant] ?? 0).toFixed(1)}%`);
         onEmotion(result);
         const confidence = result.scores[result.dominant] ?? 0;
         const entry: MoodEntry = {
@@ -188,6 +196,8 @@ export default function CameraFeed({
           (e) => e.timestamp > Date.now() - MOOD_WINDOW_MS
         );
         onMoodHistory(historyRef.current);
+      } else {
+        log("detect(ip): no face in frame");
       }
     }
 
@@ -244,38 +254,57 @@ export default function CameraFeed({
     onEmotion,
     onMoodHistory,
     drawOverlay,
+    log,
   ]);
 
   useEffect(() => {
     let mounted = true;
     setError(null);
+    log("models: loading...");
     (async () => {
       const ok = await loadModels();
-      if (mounted) setModelsReady(ok);
-      if (!ok && mounted) setError("Failed to load AI models. Check /models.");
+      if (mounted) {
+        setModelsReady(ok);
+        if (ok) log("models: loaded OK");
+        else {
+          log("models: FAILED to load");
+          setError("Failed to load AI models. Check /models.");
+        }
+      }
     })();
     return () => {
       mounted = false;
     };
-  }, [setModelsReady, setError]);
+  }, [setModelsReady, setError, log]);
 
   useEffect(() => {
     if (!running) return;
 
     if (cameraSource === "webcam") {
       const video = videoRef.current;
-      if (!video) return;
+      if (!video) {
+        log("webcam: no video element ref");
+        return;
+      }
+      log("webcam: requesting getUserMedia...");
       navigator.mediaDevices
         .getUserMedia({ video: { width: 640, height: 480 } })
         .then((stream) => {
           streamRef.current = stream;
+          log(`webcam: stream active, tracks=${stream.getTracks().length}`);
           video.srcObject = stream;
-          video.play();
+          video.play().then(
+            () => log("webcam: video.play() resolved"),
+            (e) => log(`webcam: video.play() rejected: ${e?.message ?? e}`)
+          );
+          video.onloadeddata = () =>
+            log(`webcam: video readyState=${video.readyState} size=${video.videoWidth}x${video.videoHeight}`);
+          video.onerror = () => log(`webcam: video error`);
         })
         .catch((err) => {
-          setError(
-            "Could not access camera: " + (err.message || "Permission denied")
-          );
+          const msg = err.message || "Permission denied";
+          log(`webcam: getUserMedia failed: ${msg}`);
+          setError("Could not access camera: " + msg);
           setRunning(false);
         });
       return () => {
@@ -285,9 +314,12 @@ export default function CameraFeed({
       };
     }
 
+    if (cameraSource === "ip") {
+      log(`ip: starting poll url=${ipCameraUrl}`);
+    }
     setError(null);
     return () => {};
-  }, [running, cameraSource, setError, setRunning]);
+  }, [running, cameraSource, ipCameraUrl, setError, setRunning, log]);
 
   useEffect(() => {
     if (!running) return;
@@ -309,9 +341,11 @@ export default function CameraFeed({
       }
     };
 
+    log("ip: polling started");
     intervalRef.current = setInterval(tick, IP_CAMERA_POLL_MS);
     tick();
     return () => {
+      log("ip: polling stopped");
       if (intervalRef.current) clearInterval(intervalRef.current);
       intervalRef.current = null;
     };

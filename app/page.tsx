@@ -5,13 +5,16 @@ import CameraFeed from "@/components/CameraFeed";
 import EmotionChart from "@/components/EmotionChart";
 import StatsPanel from "@/components/StatsPanel";
 import Settings from "@/components/Settings";
+import DebugPanel, { useDebugLog } from "@/components/DebugPanel";
 import type { EmotionResult } from "@/lib/faceApi";
+import { EMOTION_COLORS } from "@/lib/constants";
 
 type MoodEntry = { timestamp: number; emotion: string; confidence: number };
 
 const DEFAULT_IP_CAMERA_URL = "http://192.168.1.5:8080";
 
 export default function Home() {
+  const { entries: debugEntries, log, clear: clearDebug } = useDebugLog();
   const [running, setRunning] = useState(false);
   const [emotion, setEmotion] = useState<EmotionResult | null>(null);
   const [moodHistory, setMoodHistory] = useState<MoodEntry[]>([]);
@@ -23,15 +26,32 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [modelsReady, setModelsReady] = useState(false);
 
+  const moodColor = emotion?.dominant ? EMOTION_COLORS[emotion.dominant] : undefined;
+  const moodBg = moodColor
+    ? `linear-gradient(135deg, ${moodColor}18 0%, ${moodColor}08 50%, transparent 100%)`
+    : undefined;
+
   return (
-    <div className="min-h-screen p-6">
+    <div
+      className="min-h-screen p-6 transition-[background] duration-700"
+      style={moodBg ? { background: moodBg } : undefined}
+    >
       <header className="max-w-6xl mx-auto mb-8">
         <h1 className="text-3xl font-bold text-gradient">
           Sentient Mirror OSS
         </h1>
         <p className="text-zinc-500 mt-1">
-          Privacy-first real-time mood detection — runs entirely in your browser
+          Privacy-first real-time mood detection — runs entirely in your browser.
+          Works across face types; good lighting helps.
         </p>
+        {moodColor && (
+          <p
+            className="mt-2 text-sm font-medium transition-opacity duration-500"
+            style={{ color: moodColor }}
+          >
+            Mood: {emotion?.dominant ?? ""}
+          </p>
+        )}
         {error && (
           <div className="mt-3 px-4 py-2 rounded-lg bg-red-500/20 border border-red-500/50 text-red-200 text-sm">
             {error}
@@ -58,6 +78,7 @@ export default function Home() {
               setRunning={setRunning}
               setError={setError}
               setModelsReady={setModelsReady}
+              onLog={log}
             />
           </section>
           <section>
@@ -108,6 +129,8 @@ export default function Home() {
           <p className="text-white">Loading AI models…</p>
         </div>
       )}
+
+      <DebugPanel entries={debugEntries} onClear={clearDebug} />
     </div>
   );
 }

@@ -123,6 +123,8 @@ So: **Camera → frame (video or canvas) → face-api.js → emotion result → 
 
 **Emotions detected:** neutral, happy, sad, angry, surprised, fearful, disgusted.
 
+**Do the models work with Indian / diverse faces?** Yes. face-api.js's expression model is trained on varied datasets and works across face types. For best results use good, front-facing lighting and look at the camera. If detection is flaky, try reducing Frame skip or ensuring the face is clearly visible.
+
 **Stack:** Next.js 14, React 18, TypeScript, Tailwind, face-api.js, TensorFlow.js (via face-api), Recharts. Optional: phone + IP Webcam app for “phone as webcam.”
 
 You can point to **PROJECT.md** (this file) and **README.md** (setup, run, deploy) when someone asks “what is this and how do I run it?”
