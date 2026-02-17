@@ -11,7 +11,7 @@ import { EMOTION_COLORS } from "@/lib/constants";
 
 type MoodEntry = { timestamp: number; emotion: string; confidence: number };
 
-const DEFAULT_IP_CAMERA_URL = "http://192.168.1.5:8080";
+const DEFAULT_IP_CAMERA_URL = "http://192.168.29.88:8080";
 
 export default function Home() {
   const { entries: debugEntries, log, clear: clearDebug } = useDebugLog();
@@ -25,6 +25,7 @@ export default function Home() {
   const [privacyType, setPrivacyType] = useState<"blur" | "emoji">("blur");
   const [error, setError] = useState<string | null>(null);
   const [modelsReady, setModelsReady] = useState(false);
+  const [modelLoadStep, setModelLoadStep] = useState<string | null>(null);
 
   const moodColor = emotion?.dominant ? EMOTION_COLORS[emotion.dominant] : undefined;
   const moodBg = moodColor
@@ -79,6 +80,7 @@ export default function Home() {
               setError={setError}
               setModelsReady={setModelsReady}
               onLog={log}
+              onLoadProgress={setModelLoadStep}
             />
           </section>
           <section>
@@ -125,8 +127,18 @@ export default function Home() {
       </main>
 
       {running && !modelsReady && !error && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-10">
-          <p className="text-white">Loading AI models…</p>
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-10 p-4">
+          <div className="bg-mirror-card border border-mirror-border rounded-xl p-6 max-w-md text-left">
+            <p className="text-white font-medium mb-2">
+              {modelLoadStep ?? "Loading AI models…"}
+            </p>
+            <p className="text-zinc-400 text-sm mb-2">
+              Downloading two small neural nets into your browser: one to find faces, one to read emotions. They run 100% on your device — no video is sent anywhere. First time can take 15–45s; we’ll give up after 60s if it’s stuck.
+            </p>
+            <p className="text-zinc-500 text-xs">
+              If this hangs, try a faster connection or refresh and start camera again.
+            </p>
+          </div>
         </div>
       )}
 

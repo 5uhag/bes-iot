@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useEffect, useCallback } from "react";
-import { loadModels, detectEmotion, type EmotionResult } from "@/lib/faceApi";
+import { loadModelsWithTimeout, detectEmotion, type EmotionResult } from "@/lib/faceApi";
 import { EMOTION_COLORS, EMOTION_EMOJIS } from "@/lib/constants";
 import { IP_CAMERA_SNAPSHOT_PATH, IP_CAMERA_POLL_MS } from "@/lib/constants";
 
@@ -21,6 +21,7 @@ type Props = {
   setError: (msg: string | null) => void;
   setModelsReady: (ready: boolean) => void;
   onLog?: (msg: string) => void;
+  onLoadProgress?: (step: string | null) => void;
 };
 
 const MOOD_WINDOW_MS = 60_000;
@@ -45,6 +46,7 @@ export default function CameraFeed({
   setError,
   setModelsReady,
   onLog,
+  onLoadProgress,
 }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const log = useCallback((msg: string) => onLog?.(msg), [onLog]);
@@ -171,11 +173,19 @@ export default function CameraFeed({
     log,
   ]);
 
+  const ipSkipLogRef = useRef(false);
   const processIpFrame = useCallback(async () => {
     const img = imgRef.current;
     const canvas = canvasRef.current;
-    if (!img || !canvas || !running || !img.complete || img.naturalWidth === 0)
+    if (!img || !canvas || !running) return;
+    if (!img.complete || img.naturalWidth === 0) {
+      if (!ipSkipLogRef.current) {
+        ipSkipLogRef.current = true;
+        log("ip: waiting for first image (is the proxy reaching your phone?)");
+      }
       return;
+    }
+    ipSkipLogRef.current = false;
 
     frameCountRef.current += 1;
     const shouldDetect = frameCountRef.current % frameSkip === 0;
@@ -258,24 +268,49 @@ export default function CameraFeed({
   ]);
 
   useEffect(() => {
+    if (!running) {
+      onLoadProgress?.(null);
+      return;
+    }
     let mounted = true;
     setError(null);
-    log("models: loading...");
-    (async () => {
-      const ok = await loadModels();
-      if (mounted) {
-        setModelsReady(ok);
-        if (ok) log("models: loaded OK");
-        else {
-          log("models: FAILED to load");
-          setError("Failed to load AI models. Check /models.");
+    onLoadProgress?.("Starting…");
+    log("models: loading (deferred until you started camera)...");
+    const timeoutId = setTimeout(() => {
+      (async () => {
+        try {
+          const ok = await loadModelsWithTimeout(60_000, (step) => {
+          if (mounted) {
+            onLoadProgress?.(step);
+            log(`models: ${step}`);
+          }
+        });
+        if (mounted) {
+          setModelsReady(ok);
+          onLoadProgress?.(null);
+          if (ok) log("models: loaded OK");
+          else {
+            log("models: FAILED to load");
+            setError("Failed to load AI models. Check /models.");
+          }
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Load failed";
+        if (mounted) {
+          onLoadProgress?.(null);
+          setModelsReady(false);
+          setError(msg);
+          log(`models: ${msg}`);
         }
       }
-    })();
+      })();
+    }, 0);
     return () => {
+      clearTimeout(timeoutId);
       mounted = false;
+      onLoadProgress?.(null);
     };
-  }, [setModelsReady, setError, log]);
+  }, [running, setModelsReady, setError, onLoadProgress, log]);
 
   useEffect(() => {
     if (!running) return;
@@ -334,6 +369,10 @@ export default function CameraFeed({
     if (!running || cameraSource !== "ip") return;
 
     const proxyUrl = buildIpSnapshotUrl(ipCameraUrl);
+    const fullUrl = `${proxyUrl}&t=${Date.now()}`;
+    log(`ip: proxy URL = ${fullUrl}`);
+    log("ip: app must be run locally (npm run dev) on same Wi‑Fi as phone for proxy to reach the camera");
+
     const tick = () => {
       const img = imgRef.current;
       if (img) {
@@ -341,7 +380,7 @@ export default function CameraFeed({
       }
     };
 
-    log("ip: polling started");
+    log("ip: polling started (fetching snapshot every 200ms)");
     intervalRef.current = setInterval(tick, IP_CAMERA_POLL_MS);
     tick();
     return () => {
@@ -349,7 +388,7 @@ export default function CameraFeed({
       if (intervalRef.current) clearInterval(intervalRef.current);
       intervalRef.current = null;
     };
-  }, [running, cameraSource, ipCameraUrl]);
+  }, [running, cameraSource, ipCameraUrl, log]);
 
   if (!running) {
     return (
@@ -386,8 +425,13 @@ export default function CameraFeed({
           src={`${proxyUrl}&t=${Date.now()}`}
           alt="IP camera"
           className="absolute inset-0 w-full h-full object-contain opacity-0"
-          crossOrigin="anonymous"
-          onLoad={processIpFrame}
+          onLoad={() => {
+            log(`ip: image loaded ${imgRef.current?.naturalWidth ?? 0}x${imgRef.current?.naturalHeight ?? 0}`);
+            processIpFrame();
+          }}
+          onError={() => {
+            log("ip: image load FAILED — check: same Wi‑Fi as phone, app run locally (npm run dev), correct IP Webcam URL (e.g. http://192.168.1.x:8080)");
+          }}
         />
         <canvas
           ref={canvasRef}

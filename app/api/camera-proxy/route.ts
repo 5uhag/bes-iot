@@ -23,24 +23,29 @@ export async function GET(request: NextRequest) {
 
   try {
     const res = await fetch(url, {
-      headers: { Accept: "image/*" },
-      signal: AbortSignal.timeout(5000),
+      headers: {
+        Accept: "image/*",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; rv:109.0) Gecko/20100101 Firefox/115.0",
+      },
+      signal: AbortSignal.timeout(10000),
+      cache: "no-store",
     });
     if (!res.ok) {
-      return new NextResponse("Upstream error", { status: res.status });
+      return new NextResponse(`Upstream error ${res.status}`, { status: res.status });
     }
     const blob = await res.blob();
     const contentType = res.headers.get("content-type") || "image/jpeg";
     return new NextResponse(blob, {
       headers: {
         "Content-Type": contentType,
-        "Cache-Control": "no-store",
+        "Cache-Control": "no-store, no-cache",
+        "Access-Control-Allow-Origin": "*",
       },
     });
   } catch (e) {
     console.error("Camera proxy error:", e);
     return NextResponse.json(
-      { error: "Could not reach camera. Same Wi‑Fi? Run app locally?" },
+      { error: "Could not reach camera. Same Wi‑Fi? Run app locally (npm run dev)? Open the camera URL in a new tab and accept the warning once." },
       { status: 502 }
     );
   }

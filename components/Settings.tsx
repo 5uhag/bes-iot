@@ -70,11 +70,11 @@ export default function Settings({
                   type="text"
                   value={ipCameraUrl}
                   onChange={(e) => setIpCameraUrl(e.target.value)}
-                  placeholder="http://192.168.1.5:8080"
+                  placeholder="http://192.168.29.88:8080"
                   className="w-full px-3 py-2 rounded-lg bg-mirror-card border border-mirror-border text-sm text-zinc-200 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-mirror-purple"
                 />
                 <p className="text-xs text-zinc-500 mt-1">
-                  IP Webcam app URL. Run the app locally (npm run dev) on same Wi‑Fi — the proxy loads the feed so the browser won’t block it.
+                  Run app locally (npm run dev), same Wi‑Fi as phone. If stream is blocked: open this URL in a new tab, accept the security warning once, then try again here.
                 </p>
               </>
             )}

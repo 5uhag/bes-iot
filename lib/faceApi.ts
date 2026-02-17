@@ -2,6 +2,9 @@
 
 const MODEL_URL = "/models";
 
+/** Timeout for loading all models (ms). Prevents hanging forever. */
+export const MODELS_LOAD_TIMEOUT_MS = 60_000;
+
 let modelsLoaded = false;
 let faceapiModule: typeof import("face-api.js") | null = null;
 
@@ -12,20 +15,46 @@ async function getFaceApi() {
   return faceapiModule;
 }
 
-export async function loadModels(): Promise<boolean> {
+/**
+ * Load face detector and emotion model. Called only when user starts camera.
+ * Sequential load to avoid blocking the main thread too long at once.
+ */
+export async function loadModels(
+  onProgress?: (step: string) => void
+): Promise<boolean> {
   if (modelsLoaded) return true;
   try {
+    onProgress?.("Loading face-api.js…");
     const faceapi = await getFaceApi();
-    await Promise.all([
-      faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-      faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL),
-    ]);
+
+    onProgress?.("Loading face detector (1/2)…");
+    await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+
+    onProgress?.("Loading emotion model (2/2)…");
+    await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL);
+
     modelsLoaded = true;
     return true;
   } catch (e) {
     console.error("Failed to load face-api models:", e);
     return false;
   }
+}
+
+/** Wrap loadModels with a timeout so we don't hang forever. */
+export function loadModelsWithTimeout(
+  timeoutMs: number = MODELS_LOAD_TIMEOUT_MS,
+  onProgress?: (step: string) => void
+): Promise<boolean> {
+  return Promise.race([
+    loadModels(onProgress),
+    new Promise<boolean>((_, reject) =>
+      setTimeout(
+        () => reject(new Error("Model loading timed out. Try again or check your connection.")),
+        timeoutMs
+      )
+    ),
+  ]);
 }
 
 export type EmotionResult = {
