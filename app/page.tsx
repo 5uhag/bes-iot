@@ -9,10 +9,14 @@ import type { EmotionResult } from "@/lib/faceApi";
 
 type MoodEntry = { timestamp: number; emotion: string; confidence: number };
 
+const DEFAULT_IP_CAMERA_URL = "http://192.168.1.5:8080";
+
 export default function Home() {
   const [running, setRunning] = useState(false);
   const [emotion, setEmotion] = useState<EmotionResult | null>(null);
   const [moodHistory, setMoodHistory] = useState<MoodEntry[]>([]);
+  const [cameraSource, setCameraSource] = useState<"webcam" | "ip">("webcam");
+  const [ipCameraUrl, setIpCameraUrl] = useState(DEFAULT_IP_CAMERA_URL);
   const [frameSkip, setFrameSkip] = useState(5);
   const [privacyMode, setPrivacyMode] = useState(false);
   const [privacyType, setPrivacyType] = useState<"blur" | "emoji">("blur");
@@ -42,6 +46,8 @@ export default function Home() {
               Live video
             </h2>
             <CameraFeed
+              cameraSource={cameraSource}
+              ipCameraUrl={ipCameraUrl}
               frameSkip={frameSkip}
               privacyMode={privacyMode}
               privacyType={privacyType}
@@ -64,6 +70,10 @@ export default function Home() {
             <h2 className="text-sm font-medium text-zinc-400">Current stats</h2>
             <StatsPanel current={emotion} moodHistory={moodHistory} />
             <Settings
+              cameraSource={cameraSource}
+              setCameraSource={setCameraSource}
+              ipCameraUrl={ipCameraUrl}
+              setIpCameraUrl={setIpCameraUrl}
               frameSkip={frameSkip}
               setFrameSkip={setFrameSkip}
               privacyMode={privacyMode}
@@ -78,6 +88,10 @@ export default function Home() {
             <h2 className="text-sm font-medium text-zinc-400">Current stats</h2>
             <StatsPanel current={emotion} moodHistory={moodHistory} />
             <Settings
+              cameraSource={cameraSource}
+              setCameraSource={setCameraSource}
+              ipCameraUrl={ipCameraUrl}
+              setIpCameraUrl={setIpCameraUrl}
               frameSkip={frameSkip}
               setFrameSkip={setFrameSkip}
               privacyMode={privacyMode}

@@ -7,6 +7,10 @@ import {
 } from "@/lib/constants";
 
 type Props = {
+  cameraSource: "webcam" | "ip";
+  setCameraSource: (v: "webcam" | "ip") => void;
+  ipCameraUrl: string;
+  setIpCameraUrl: (v: string) => void;
   frameSkip: number;
   setFrameSkip: (v: number) => void;
   privacyMode: boolean;
@@ -16,6 +20,10 @@ type Props = {
 };
 
 export default function Settings({
+  cameraSource,
+  setCameraSource,
+  ipCameraUrl,
+  setIpCameraUrl,
   frameSkip,
   setFrameSkip,
   privacyMode,
@@ -28,6 +36,49 @@ export default function Settings({
       <div>
         <h2 className="text-sm font-semibold text-zinc-300 mb-3">Settings</h2>
         <div className="space-y-4">
+          <div>
+            <label className="block text-xs text-zinc-500 mb-2">
+              Camera source
+            </label>
+            <div className="flex gap-2 mb-2">
+              <button
+                type="button"
+                onClick={() => setCameraSource("webcam")}
+                className={`flex-1 px-3 py-2 rounded-lg text-sm ${
+                  cameraSource === "webcam"
+                    ? "bg-mirror-purple text-white"
+                    : "bg-mirror-border text-zinc-400 hover:bg-zinc-600"
+                }`}
+              >
+                Webcam
+              </button>
+              <button
+                type="button"
+                onClick={() => setCameraSource("ip")}
+                className={`flex-1 px-3 py-2 rounded-lg text-sm ${
+                  cameraSource === "ip"
+                    ? "bg-mirror-purple text-white"
+                    : "bg-mirror-border text-zinc-400 hover:bg-zinc-600"
+                }`}
+              >
+                Phone (IP)
+              </button>
+            </div>
+            {cameraSource === "ip" && (
+              <>
+                <input
+                  type="text"
+                  value={ipCameraUrl}
+                  onChange={(e) => setIpCameraUrl(e.target.value)}
+                  placeholder="http://192.168.1.5:8080"
+                  className="w-full px-3 py-2 rounded-lg bg-mirror-card border border-mirror-border text-sm text-zinc-200 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-mirror-purple"
+                />
+                <p className="text-xs text-zinc-500 mt-1">
+                  IP Webcam app URL. Run the app locally (npm run dev) on same Wi‑Fi — the proxy loads the feed so the browser won’t block it.
+                </p>
+              </>
+            )}
+          </div>
           <div>
             <label className="block text-xs text-zinc-500 mb-1">
               Frame skip (every Nth frame)

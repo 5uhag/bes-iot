@@ -2,7 +2,7 @@
 
 **Privacy-first real-time mood detection** — now a **Next.js** app that runs **entirely in your browser**. No Streamlit, no Python server, no cloud. Deploy to **Vercel** in one click.
 
-- **Camera**: Browser webcam via `getUserMedia`
+- **Camera**: Browser webcam **or your phone as an IP camera** (e.g. IP Webcam app)
 - **Emotion detection**: [face-api.js](https://github.com/justadudewhohacks/face-api.js) (TensorFlow.js) in the browser — same 7 emotions (happy, sad, angry, surprised, fearful, disgusted, neutral)
 - **Privacy**: Blur or emoji overlay on your face
 - **Charts**: 60-second mood trend with Recharts
@@ -17,6 +17,20 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000), allow camera access, and click **Start camera**.
 
+## Using your phone as the camera (IP camera)
+
+Use your phone as a remote “sensor” on the same Wi‑Fi:
+
+1. **On your phone:** Install [IP Webcam](https://play.google.com/store/apps/details?id=com.pas.webcam) (Android), start the server, and note the URL (e.g. `http://192.168.1.5:8080`).
+2. **Run the app locally** (`npm run dev`) — laptop and phone must be on the **same Wi‑Fi**.
+3. In the app: **Settings → Camera source → Phone (IP)**, enter the base URL (e.g. `http://192.168.1.5:8080`), then **Start camera**.
+
+The app polls the phone’s snapshot URL via a small proxy (`/api/camera-proxy`) so the browser can load the image. **IP camera only works when you run the app locally**; on Vercel the server can’t reach your phone.
+
+## Project walkthrough (IoT / explain the stack)
+
+See **[PROJECT.md](./PROJECT.md)** for a full walkthrough: what the project does, how it fits IoT, architecture, where each technology is used, and how to present or explain it.
+
 ## Deploy to Vercel
 
 1. Push this repo to GitHub.
@@ -29,6 +43,7 @@ No env vars or server needed. The app is static + client-side; emotion models ar
 
 ```
 ├── app/
+│   ├── api/camera-proxy/  # Proxies IP camera snapshot (phone-as-webcam)
 │   ├── layout.tsx
 │   ├── page.tsx
 │   └── globals.css
@@ -36,7 +51,7 @@ No env vars or server needed. The app is static + client-side; emotion models ar
 │   ├── CameraFeed.tsx   # Webcam + canvas overlay + emotion loop
 │   ├── EmotionChart.tsx # 60s mood trend
 │   ├── StatsPanel.tsx  # Current emotion + distribution
-│   └── Settings.tsx    # Frame skip, privacy mode
+│   └── Settings.tsx    # Camera source (webcam / IP), frame skip, privacy
 ├── lib/
 │   ├── faceApi.ts       # face-api.js load + detectEmotion()
 │   └── constants.ts     # Emotions, colors, emojis
