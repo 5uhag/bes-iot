@@ -1,0 +1,99 @@
+"use client";
+
+import { useState } from "react";
+import CameraFeed from "@/components/CameraFeed";
+import EmotionChart from "@/components/EmotionChart";
+import StatsPanel from "@/components/StatsPanel";
+import Settings from "@/components/Settings";
+import type { EmotionResult } from "@/lib/faceApi";
+
+type MoodEntry = { timestamp: number; emotion: string; confidence: number };
+
+export default function Home() {
+  const [running, setRunning] = useState(false);
+  const [emotion, setEmotion] = useState<EmotionResult | null>(null);
+  const [moodHistory, setMoodHistory] = useState<MoodEntry[]>([]);
+  const [frameSkip, setFrameSkip] = useState(5);
+  const [privacyMode, setPrivacyMode] = useState(false);
+  const [privacyType, setPrivacyType] = useState<"blur" | "emoji">("blur");
+  const [error, setError] = useState<string | null>(null);
+  const [modelsReady, setModelsReady] = useState(false);
+
+  return (
+    <div className="min-h-screen p-6">
+      <header className="max-w-6xl mx-auto mb-8">
+        <h1 className="text-3xl font-bold text-gradient">
+          Sentient Mirror OSS
+        </h1>
+        <p className="text-zinc-500 mt-1">
+          Privacy-first real-time mood detection — runs entirely in your browser
+        </p>
+        {error && (
+          <div className="mt-3 px-4 py-2 rounded-lg bg-red-500/20 border border-red-500/50 text-red-200 text-sm">
+            {error}
+          </div>
+        )}
+      </header>
+
+      <main className="max-w-6xl mx-auto flex gap-6 flex-col lg:flex-row">
+        <div className="flex-1 min-w-0 space-y-6">
+          <section>
+            <h2 className="text-sm font-medium text-zinc-400 mb-2">
+              Live video
+            </h2>
+            <CameraFeed
+              frameSkip={frameSkip}
+              privacyMode={privacyMode}
+              privacyType={privacyType}
+              onEmotion={setEmotion}
+              onMoodHistory={setMoodHistory}
+              moodHistory={moodHistory}
+              running={running}
+              setRunning={setRunning}
+              setError={setError}
+              setModelsReady={setModelsReady}
+            />
+          </section>
+          <section>
+            <h2 className="text-sm font-medium text-zinc-400 mb-2">
+              Mood trend (60s)
+            </h2>
+            <EmotionChart data={moodHistory} />
+          </section>
+          <section className="lg:hidden space-y-4">
+            <h2 className="text-sm font-medium text-zinc-400">Current stats</h2>
+            <StatsPanel current={emotion} moodHistory={moodHistory} />
+            <Settings
+              frameSkip={frameSkip}
+              setFrameSkip={setFrameSkip}
+              privacyMode={privacyMode}
+              setPrivacyMode={setPrivacyMode}
+              privacyType={privacyType}
+              setPrivacyType={setPrivacyType}
+            />
+          </section>
+        </div>
+        <div className="hidden lg:block">
+          <div className="sticky top-6 space-y-4">
+            <h2 className="text-sm font-medium text-zinc-400">Current stats</h2>
+            <StatsPanel current={emotion} moodHistory={moodHistory} />
+            <Settings
+              frameSkip={frameSkip}
+              setFrameSkip={setFrameSkip}
+              privacyMode={privacyMode}
+              setPrivacyMode={setPrivacyMode}
+              privacyType={privacyType}
+              setPrivacyType={setPrivacyType}
+            />
+          </div>
+        </div>
+      </main>
+
+      {running && !modelsReady && !error && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-10">
+          <p className="text-white">Loading AI models…</p>
+        </div>
+      )}
+    </div>
+  );
+}
