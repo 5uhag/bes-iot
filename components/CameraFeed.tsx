@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useCallback } from "react";
 import { loadModelsWithTimeout, detectEmotion, type EmotionResult } from "@/lib/faceApi";
-import { EMOTION_COLORS, EMOTION_EMOJIS } from "@/lib/constants";
+import { EMOTION_COLORS, EMOTION_EMOJIS, type Theme } from "@/lib/constants";
 import { IP_CAMERA_SNAPSHOT_PATH, IP_CAMERA_POLL_MS } from "@/lib/constants";
 
 type MoodEntry = { timestamp: number; emotion: string; confidence: number };
@@ -22,6 +22,7 @@ type Props = {
   setModelsReady: (ready: boolean) => void;
   onLog?: (msg: string) => void;
   onLoadProgress?: (step: string | null) => void;
+  theme: Theme;
 };
 
 const MOOD_WINDOW_MS = 60_000;
@@ -47,6 +48,7 @@ export default function CameraFeed({
   setModelsReady,
   onLog,
   onLoadProgress,
+  theme,
 }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const log = useCallback((msg: string) => onLog?.(msg), [onLog]);
@@ -280,29 +282,29 @@ export default function CameraFeed({
       (async () => {
         try {
           const ok = await loadModelsWithTimeout(60_000, (step) => {
+            if (mounted) {
+              onLoadProgress?.(step);
+              log(`models: ${step}`);
+            }
+          });
           if (mounted) {
-            onLoadProgress?.(step);
-            log(`models: ${step}`);
+            setModelsReady(ok);
+            onLoadProgress?.(null);
+            if (ok) log("models: loaded OK");
+            else {
+              log("models: FAILED to load");
+              setError("Failed to load AI models. Check /models.");
+            }
           }
-        });
-        if (mounted) {
-          setModelsReady(ok);
-          onLoadProgress?.(null);
-          if (ok) log("models: loaded OK");
-          else {
-            log("models: FAILED to load");
-            setError("Failed to load AI models. Check /models.");
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : "Load failed";
+          if (mounted) {
+            onLoadProgress?.(null);
+            setModelsReady(false);
+            setError(msg);
+            log(`models: ${msg}`);
           }
         }
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : "Load failed";
-        if (mounted) {
-          onLoadProgress?.(null);
-          setModelsReady(false);
-          setError(msg);
-          log(`models: ${msg}`);
-        }
-      }
       })();
     }, 0);
     return () => {
@@ -353,7 +355,7 @@ export default function CameraFeed({
       log(`ip: starting poll url=${ipCameraUrl}`);
     }
     setError(null);
-    return () => {};
+    return () => { };
   }, [running, cameraSource, ipCameraUrl, setError, setRunning, log]);
 
   useEffect(() => {
@@ -392,7 +394,7 @@ export default function CameraFeed({
 
   if (!running) {
     return (
-      <div className="rounded-xl bg-mirror-card border border-mirror-border overflow-hidden aspect-video max-w-3xl flex items-center justify-center">
+      <div className={`w-full h-full rounded-xl border transition-colors duration-1000 ${theme.bgPanel} ${theme.border} overflow-hidden aspect-video flex items-center justify-center`}>
         <div className="text-center p-8">
           <p className="text-zinc-400 mb-4">
             Camera is off
@@ -405,7 +407,7 @@ export default function CameraFeed({
           <button
             type="button"
             onClick={() => setRunning(true)}
-            className="px-6 py-3 rounded-lg bg-gradient-to-r from-mirror-purple to-mirror-violet text-white font-medium hover:opacity-90 transition"
+            className={`px-6 py-3 rounded-lg text-white font-medium hover:opacity-90 transition-colors duration-1000 ${theme.accent}`}
           >
             Start camera
           </button>
@@ -417,7 +419,7 @@ export default function CameraFeed({
   if (cameraSource === "ip") {
     const proxyUrl = buildIpSnapshotUrl(ipCameraUrl);
     return (
-      <div className="relative rounded-xl overflow-hidden border border-mirror-border aspect-video max-w-3xl bg-black">
+      <div className={`relative w-full h-full rounded-xl overflow-hidden border transition-colors duration-1000 ${theme.border} aspect-video bg-black`}>
         <img
           ref={(el) => {
             imgRef.current = el;
@@ -449,7 +451,7 @@ export default function CameraFeed({
   }
 
   return (
-    <div className="relative rounded-xl overflow-hidden border border-mirror-border aspect-video max-w-3xl bg-black">
+    <div className={`relative w-full h-full rounded-xl overflow-hidden border transition-colors duration-1000 ${theme.border} aspect-video bg-black`}>
       <video
         ref={videoRef}
         className="absolute inset-0 w-full h-full object-cover"

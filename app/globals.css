@@ -2,21 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --mirror-purple: #667eea;
-  --mirror-violet: #764ba2;
-  --mirror-surface: #0f0f12;
-  --mirror-card: #18181c;
-  --mirror-border: #27272a;
-}
-
 body {
-  background: var(--mirror-surface);
+  background: #050505;
   color: #e4e4e7;
 }
 
-@layer utilities {
-  .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-[#667eea] to-[#764ba2];
-  }
-}

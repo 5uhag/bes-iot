@@ -4,6 +4,7 @@ import {
   DEFAULT_FRAME_SKIP,
   MIN_FRAME_SKIP,
   MAX_FRAME_SKIP,
+  type Theme,
 } from "@/lib/constants";
 
 type Props = {
@@ -17,6 +18,7 @@ type Props = {
   setPrivacyMode: (v: boolean) => void;
   privacyType: "blur" | "emoji";
   setPrivacyType: (v: "blur" | "emoji") => void;
+  theme: Theme;
 };
 
 export default function Settings({
@@ -30,36 +32,35 @@ export default function Settings({
   setPrivacyMode,
   privacyType,
   setPrivacyType,
+  theme,
 }: Props) {
   return (
-    <aside className="w-64 shrink-0 space-y-6 border-l border-mirror-border pl-6">
+    <div className={`w-full space-y-6 transition-colors duration-1000 border rounded-xl p-4 ${theme.bgPanel} ${theme.border}`}>
       <div>
-        <h2 className="text-sm font-semibold text-zinc-300 mb-3">Settings</h2>
+        <h2 className="text-sm font-semibold text-zinc-200 mb-3">Settings</h2>
         <div className="space-y-4">
           <div>
-            <label className="block text-xs text-zinc-500 mb-2">
+            <label className="block text-xs text-zinc-400 mb-2">
               Camera source
             </label>
             <div className="flex gap-2 mb-2">
               <button
                 type="button"
                 onClick={() => setCameraSource("webcam")}
-                className={`flex-1 px-3 py-2 rounded-lg text-sm ${
-                  cameraSource === "webcam"
-                    ? "bg-mirror-purple text-white"
-                    : "bg-mirror-border text-zinc-400 hover:bg-zinc-600"
-                }`}
+                className={`flex-1 px-3 py-2 rounded-lg text-sm transition-colors duration-500 ${cameraSource === "webcam"
+                  ? `${theme.accent} text-white`
+                  : "bg-white/5 text-zinc-400 hover:bg-white/10"
+                  }`}
               >
                 Webcam
               </button>
               <button
                 type="button"
                 onClick={() => setCameraSource("ip")}
-                className={`flex-1 px-3 py-2 rounded-lg text-sm ${
-                  cameraSource === "ip"
-                    ? "bg-mirror-purple text-white"
-                    : "bg-mirror-border text-zinc-400 hover:bg-zinc-600"
-                }`}
+                className={`flex-1 px-3 py-2 rounded-lg text-sm transition-colors duration-500 ${cameraSource === "ip"
+                  ? `${theme.accent} text-white`
+                  : "bg-white/5 text-zinc-400 hover:bg-white/10"
+                  }`}
               >
                 Phone (IP)
               </button>
@@ -71,7 +72,7 @@ export default function Settings({
                   value={ipCameraUrl}
                   onChange={(e) => setIpCameraUrl(e.target.value)}
                   placeholder="http://192.168.29.88:8080"
-                  className="w-full px-3 py-2 rounded-lg bg-mirror-card border border-mirror-border text-sm text-zinc-200 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-mirror-purple"
+                  className={`w-full px-3 py-2 rounded-lg border bg-black/20 text-sm text-zinc-200 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-white/50 transition-colors duration-1000 ${theme.border}`}
                 />
                 <p className="text-xs text-zinc-500 mt-1">
                   Run app locally (npm run dev), same Wi‑Fi as phone. If stream is blocked: open this URL in a new tab, accept the security warning once, then try again here.
@@ -80,7 +81,7 @@ export default function Settings({
             )}
           </div>
           <div>
-            <label className="block text-xs text-zinc-500 mb-1">
+            <label className="block text-xs text-zinc-400 mb-1">
               Frame skip (every Nth frame)
             </label>
             <input
@@ -89,12 +90,12 @@ export default function Settings({
               max={MAX_FRAME_SKIP}
               value={frameSkip}
               onChange={(e) => setFrameSkip(Number(e.target.value))}
-              className="w-full h-2 rounded-lg appearance-none bg-mirror-border accent-mirror-purple"
+              className={`w-full h-2 rounded-lg appearance-none bg-white/10 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full transition-colors duration-1000 [&::-webkit-slider-thumb]:${theme.accent}`}
             />
-            <p className="text-xs text-zinc-500 mt-0.5">{frameSkip}</p>
+            <p className="text-xs text-zinc-400 mt-0.5">{frameSkip}</p>
           </div>
-          <div className="pt-2 border-t border-mirror-border">
-            <h3 className="text-xs font-medium text-zinc-400 mb-2">
+          <div className={`pt-2 border-t transition-colors duration-1000 ${theme.border}`}>
+            <h3 className="text-xs font-medium text-zinc-300 mb-2">
               Privacy shield
             </h3>
             <label className="flex items-center gap-2 cursor-pointer mb-2">
@@ -102,31 +103,29 @@ export default function Settings({
                 type="checkbox"
                 checked={privacyMode}
                 onChange={(e) => setPrivacyMode(e.target.checked)}
-                className="rounded border-mirror-border bg-mirror-card text-mirror-purple focus:ring-mirror-purple"
+                className={`rounded border-white/20 bg-black/20 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0 transition-colors duration-1000`}
               />
-              <span className="text-sm">Enable privacy mode</span>
+              <span className="text-sm text-zinc-300">Enable privacy mode</span>
             </label>
             {privacyMode && (
               <div className="flex gap-2 mt-2">
                 <button
                   type="button"
                   onClick={() => setPrivacyType("blur")}
-                  className={`px-3 py-1.5 rounded-lg text-sm ${
-                    privacyType === "blur"
-                      ? "bg-mirror-purple text-white"
-                      : "bg-mirror-border text-zinc-400 hover:bg-zinc-600"
-                  }`}
+                  className={`px-3 py-1.5 rounded-lg text-sm transition-colors duration-500 ${privacyType === "blur"
+                    ? `${theme.accent} text-white`
+                    : "bg-white/5 text-zinc-400 hover:bg-white/10"
+                    }`}
                 >
                   Blur
                 </button>
                 <button
                   type="button"
                   onClick={() => setPrivacyType("emoji")}
-                  className={`px-3 py-1.5 rounded-lg text-sm ${
-                    privacyType === "emoji"
-                      ? "bg-mirror-purple text-white"
-                      : "bg-mirror-border text-zinc-400 hover:bg-zinc-600"
-                  }`}
+                  className={`px-3 py-1.5 rounded-lg text-sm transition-colors duration-500 ${privacyType === "emoji"
+                    ? `${theme.accent} text-white`
+                    : "bg-white/5 text-zinc-400 hover:bg-white/10"
+                    }`}
                 >
                   Emoji
                 </button>
@@ -135,10 +134,10 @@ export default function Settings({
           </div>
         </div>
       </div>
-      <div className="pt-4 border-t border-mirror-border text-xs text-zinc-500 space-y-1">
+      <div className={`pt-4 border-t text-xs text-zinc-500 space-y-1 transition-colors duration-1000 ${theme.border}`}>
         <p className="font-medium text-zinc-400">Sentient Mirror OSS</p>
         <p>100% local processing in your browser. No cloud, no uploads.</p>
       </div>
-    </aside>
+    </div>
   );
 }

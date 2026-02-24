@@ -9,12 +9,13 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import { EMOTION_COLORS } from "@/lib/constants";
+import { EMOTION_COLORS, type Theme } from "@/lib/constants";
 
 type MoodEntry = { timestamp: number; emotion: string; confidence: number };
 
 type Props = {
   data: MoodEntry[];
+  theme: Theme;
 };
 
 const emotionColors: Record<string, string> = {
@@ -34,10 +35,10 @@ const EMOTION_KEYS = [
   "disgusted",
 ];
 
-export default function EmotionChart({ data }: Props) {
+export default function EmotionChart({ data, theme }: Props) {
   if (data.length === 0) {
     return (
-      <div className="h-[280px] rounded-xl bg-mirror-card border border-mirror-border flex items-center justify-center text-zinc-500">
+      <div className={`h-[280px] rounded-xl border flex items-center justify-center text-zinc-500 transition-colors duration-1000 ${theme.bgPanel} ${theme.border}`}>
         Collecting mood data… chart will appear shortly.
       </div>
     );
@@ -57,7 +58,7 @@ export default function EmotionChart({ data }: Props) {
   });
 
   return (
-    <div className="h-[280px] rounded-xl bg-mirror-card border border-mirror-border p-3">
+    <div className={`h-[280px] rounded-xl border p-3 transition-colors duration-1000 ${theme.bgPanel} ${theme.border}`}>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart
           data={chartData}

@@ -1,6 +1,6 @@
 "use client";
 
-import { EMOTION_EMOJIS } from "@/lib/constants";
+import { EMOTION_EMOJIS, type Theme } from "@/lib/constants";
 
 type MoodEntry = { timestamp: number; emotion: string; confidence: number };
 
@@ -12,9 +12,10 @@ type EmotionResult = {
 type Props = {
   current: EmotionResult | null;
   moodHistory: MoodEntry[];
+  theme: Theme;
 };
 
-export default function StatsPanel({ current, moodHistory }: Props) {
+export default function StatsPanel({ current, moodHistory, theme }: Props) {
   const dominant = current?.dominant ?? "neutral";
   const confidence = current?.scores?.[dominant] ?? 0;
   const emoji = EMOTION_EMOJIS[dominant] ?? "😐";
@@ -29,15 +30,15 @@ export default function StatsPanel({ current, moodHistory }: Props) {
     .slice(0, 3);
 
   return (
-    <div className="rounded-xl bg-mirror-card border border-mirror-border p-4 space-y-4">
+    <div className={`rounded-xl border p-4 space-y-4 transition-colors duration-1000 ${theme.bgPanel} ${theme.border}`}>
       <div>
         <h3 className="text-sm font-medium text-zinc-400 mb-1">Current emotion</h3>
         <p className="text-2xl font-semibold flex items-center gap-2">
           <span>{emoji}</span>
-          <span className="uppercase">{dominant}</span>
+          <span className={`uppercase transition-colors duration-1000 ${theme.text}`}>{dominant}</span>
         </p>
-        <p className="text-sm text-zinc-500 mt-0.5">
-          Confidence: <strong className="text-zinc-300">{confidence.toFixed(1)}%</strong>
+        <p className="text-sm text-zinc-400 mt-0.5">
+          Confidence: <strong className="text-zinc-200">{confidence.toFixed(1)}%</strong>
         </p>
       </div>
       <div>
@@ -53,7 +54,7 @@ export default function StatsPanel({ current, moodHistory }: Props) {
                 <span>
                   {e} {emotion.charAt(0).toUpperCase() + emotion.slice(1)}
                 </span>
-                <strong className="text-zinc-300">{pct}%</strong>
+                <strong className="text-zinc-200">{pct}%</strong>
               </li>
             );
           })}
