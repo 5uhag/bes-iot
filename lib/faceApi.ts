@@ -63,6 +63,26 @@ export type EmotionResult = {
   box?: { x: number; y: number; width: number; height: number };
 };
 
+/**
+ * Adjusts raw expression scores to make the model more sensitive.
+ * face-api.js is notoriously biased towards "neutral".
+ * We dampen "neutral" and amplify others to catch micro-expressions.
+ */
+function adjustExpressions(expressions: Record<string, number>): Record<string, number> {
+  const adjusted = { ...expressions };
+  const SENSITIVITY_MULTIPLIER = 3.0; // Boosts non-neutral signals
+
+  for (const emotion in adjusted) {
+    if (emotion !== 'neutral') {
+      adjusted[emotion] = adjusted[emotion] * SENSITIVITY_MULTIPLIER;
+    } else {
+      // Dampen neutral so it doesn't overpower subtle expressions
+      adjusted[emotion] = adjusted[emotion] * 0.4;
+    }
+  }
+  return adjusted;
+}
+
 export async function detectEmotion(
   input: HTMLVideoElement | HTMLCanvasElement,
   multiFace: boolean = false
@@ -77,13 +97,16 @@ export async function detectEmotion(
       if (!results || results.length === 0) return null;
 
       return results.map(result => {
-        const expressions = result.expressions as unknown as Record<string, number>;
-        const entries = Object.entries(expressions);
+        const rawExpressions = result.expressions as unknown as Record<string, number>;
+        const adjustedExpressions = adjustExpressions(rawExpressions);
+        const entries = Object.entries(adjustedExpressions);
         const dominant = entries.reduce((a, b) => (a[1] > b[1] ? a : b))[0];
-        const confidence = expressions[dominant] ?? 0;
+
+        // Use raw confidence for display, but maxed at 99.9%
+        const confidence = rawExpressions[dominant] ?? 0;
 
         const scores: Record<string, number> = {};
-        for (const [emotion, value] of entries) {
+        for (const [emotion, value] of Object.entries(rawExpressions)) {
           scores[emotion] = Math.round(value * 1000) / 10;
         }
 
@@ -109,13 +132,14 @@ export async function detectEmotion(
 
       if (!result) return null;
 
-      const expressions = result.expressions as unknown as Record<string, number>;
-      const entries = Object.entries(expressions);
+      const rawExpressions = result.expressions as unknown as Record<string, number>;
+      const adjustedExpressions = adjustExpressions(rawExpressions);
+      const entries = Object.entries(adjustedExpressions);
       const dominant = entries.reduce((a, b) => (a[1] > b[1] ? a : b))[0];
-      const confidence = expressions[dominant] ?? 0;
+      const confidence = rawExpressions[dominant] ?? 0;
 
       const scores: Record<string, number> = {};
-      for (const [emotion, value] of entries) {
+      for (const [emotion, value] of Object.entries(rawExpressions)) {
         scores[emotion] = Math.round(value * 1000) / 10;
       }
 
