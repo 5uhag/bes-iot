@@ -1,5 +1,5 @@
 """
-Sentient-Mirror-OSS: Privacy-First Mood Detector
+Emotion Detector: Privacy-First Mood Detector
 A real-time emotion detection app using Streamlit, OpenCV, and DeepFace
 """
 
@@ -135,7 +135,7 @@ def main():
         # App info
         st.subheader("ℹ️ About")
         st.markdown("""
-        **Sentient-Mirror-OSS** is a privacy-first mood detection application.
+        **Emotion Detector** is a privacy-first mood detection application.
         
         - ✅ 100% Local Processing
         - ✅ No Cloud Upload

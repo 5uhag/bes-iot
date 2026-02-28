@@ -1,4 +1,4 @@
-# Sentient Mirror OSS
+# Emotion Detector
 
 **Privacy-first real-time mood detection** — now a **Next.js** app that runs **entirely in your browser**. No Streamlit, no Python server, no cloud. Deploy to **Vercel** in one click.
 

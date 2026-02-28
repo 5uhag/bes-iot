@@ -1,5 +1,5 @@
 """
-Configuration constants for Sentient-Mirror-OSS
+Configuration constants for Emotion Detector
 Privacy-first mood detection application
 """
 
@@ -49,6 +49,6 @@ CONNECTION_TIMEOUT = 5  # seconds
 FRAME_RATE = 30  # Target FPS for display
 
 # UI Settings
-APP_TITLE = "🪞 Sentient Mirror OSS"
+APP_TITLE = "🪞 Emotion Detector"
 APP_ICON = "🪞"
 SIDEBAR_STATE = "expanded"

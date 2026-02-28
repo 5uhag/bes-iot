@@ -13,6 +13,8 @@ type Props = {
   frameSkip: number;
   privacyMode: boolean;
   privacyType: "blur" | "emoji";
+  showVideo: boolean;
+  multiFace: boolean;
   onEmotion: (result: EmotionResult | null) => void;
   onMoodHistory: (history: MoodEntry[]) => void;
   moodHistory: MoodEntry[];
@@ -40,6 +42,8 @@ export default function CameraFeed({
   frameSkip,
   privacyMode,
   privacyType,
+  showVideo,
+  multiFace,
   onEmotion,
   onMoodHistory,
   running,
@@ -79,13 +83,27 @@ export default function CameraFeed({
       const pad = 10;
       const boxW = metrics.width + pad * 2;
       const boxH = 28;
+
+      const startX = result.box ? result.box.x : 10;
+      const startY = result.box ? result.box.y : 10 + boxH;
+
       ctx.fillStyle = color;
-      ctx.fillRect(10, 10, boxW, boxH);
+      ctx.fillRect(startX, Math.max(0, startY - boxH), boxW, boxH);
       ctx.fillStyle = "#fff";
-      ctx.fillText(label, 10 + pad, 10 + 20);
+      ctx.fillText(label, startX + pad, Math.max(0, startY - boxH) + 20);
     },
     [privacyMode, privacyType]
   );
+
+  const takeSnapshot = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const dataUrl = canvas.toDataURL("image/png");
+    const a = document.createElement("a");
+    a.href = dataUrl;
+    a.download = `emotion-snapshot-${new Date().getTime()}.png`;
+    a.click();
+  }, []);
 
   const processFrameWebcam = useCallback(async () => {
     const video = videoRef.current;
@@ -98,16 +116,21 @@ export default function CameraFeed({
     frameCountRef.current += 1;
     const shouldDetect = frameCountRef.current % frameSkip === 0;
 
-    let result: EmotionResult | null = null;
+    let results: EmotionResult[] = [];
     if (shouldDetect) {
-      result = await detectEmotion(video);
-      if (result) {
-        log(`detect: ${result.dominant} ${(result.scores[result.dominant] ?? 0).toFixed(1)}%`);
-        onEmotion(result);
-        const confidence = result.scores[result.dominant] ?? 0;
+      const detectResult = await detectEmotion(video, multiFace);
+      if (detectResult) {
+        results = Array.isArray(detectResult) ? detectResult : [detectResult];
+
+        // Use the largest face or first face for main stats
+        const mainResult = results[0];
+
+        log(`detect: ${mainResult.dominant} ${(mainResult.scores[mainResult.dominant] ?? 0).toFixed(1)}%`);
+        onEmotion(mainResult);
+        const confidence = mainResult.scores[mainResult.dominant] ?? 0;
         const entry: MoodEntry = {
           timestamp: Date.now(),
-          emotion: result.dominant,
+          emotion: mainResult.dominant,
           confidence,
         };
         historyRef.current = [...historyRef.current, entry].filter(
@@ -123,44 +146,49 @@ export default function CameraFeed({
     if (ctx) {
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
-      ctx.drawImage(video, 0, 0);
-
-      if (result && privacyMode && result.box) {
-        if (privacyType === "blur") {
-          ctx.filter = "blur(25px)";
-          ctx.drawImage(
-            canvas,
-            result.box.x,
-            result.box.y,
-            result.box.width,
-            result.box.height,
-            result.box.x,
-            result.box.y,
-            result.box.width,
-            result.box.height
-          );
-          ctx.filter = "none";
-        } else if (privacyType === "emoji") {
-          const emoji = EMOTION_EMOJIS[result.dominant] ?? "😐";
-          ctx.font = "120px system-ui, sans-serif";
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
-          ctx.fillStyle = "rgba(0,0,0,0.4)";
-          ctx.fillRect(
-            result.box.x,
-            result.box.y,
-            result.box.width,
-            result.box.height
-          );
-          ctx.fillText(
-            emoji,
-            result.box.x + result.box.width / 2,
-            result.box.y + result.box.height / 2
-          );
-        }
+      if (showVideo) {
+        ctx.drawImage(video, 0, 0);
+      } else {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
       }
 
-      if (result) drawOverlay(ctx, result);
+      for (const result of results) {
+        if (privacyMode && result.box && showVideo) {
+          if (privacyType === "blur") {
+            ctx.filter = "blur(25px)";
+            ctx.drawImage(
+              canvas,
+              result.box.x,
+              result.box.y,
+              result.box.width,
+              result.box.height,
+              result.box.x,
+              result.box.y,
+              result.box.width,
+              result.box.height
+            );
+            ctx.filter = "none";
+          } else if (privacyType === "emoji") {
+            const emoji = EMOTION_EMOJIS[result.dominant] ?? "😐";
+            ctx.font = "120px system-ui, sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillStyle = "rgba(0,0,0,0.4)";
+            ctx.fillRect(
+              result.box.x,
+              result.box.y,
+              result.box.width,
+              result.box.height
+            );
+            ctx.fillText(
+              emoji,
+              result.box.x + result.box.width / 2,
+              result.box.y + result.box.height / 2
+            );
+          }
+        }
+        drawOverlay(ctx, result);
+      }
     }
 
     rafRef.current = requestAnimationFrame(processFrameWebcam);
@@ -192,16 +220,19 @@ export default function CameraFeed({
     frameCountRef.current += 1;
     const shouldDetect = frameCountRef.current % frameSkip === 0;
 
-    let result: EmotionResult | null = null;
+    let results: EmotionResult[] = [];
     if (shouldDetect) {
-      result = await detectEmotion(canvas);
-      if (result) {
-        log(`detect(ip): ${result.dominant} ${(result.scores[result.dominant] ?? 0).toFixed(1)}%`);
-        onEmotion(result);
-        const confidence = result.scores[result.dominant] ?? 0;
+      const detectResult = await detectEmotion(canvas, multiFace);
+      if (detectResult) {
+        results = Array.isArray(detectResult) ? detectResult : [detectResult];
+
+        const mainResult = results[0];
+        log(`detect(ip): ${mainResult.dominant} ${(mainResult.scores[mainResult.dominant] ?? 0).toFixed(1)}%`);
+        onEmotion(mainResult);
+        const confidence = mainResult.scores[mainResult.dominant] ?? 0;
         const entry: MoodEntry = {
           timestamp: Date.now(),
-          emotion: result.dominant,
+          emotion: mainResult.dominant,
           confidence,
         };
         historyRef.current = [...historyRef.current, entry].filter(
@@ -219,44 +250,51 @@ export default function CameraFeed({
         canvas.width = img.naturalWidth;
         canvas.height = img.naturalHeight;
       }
-      ctx.drawImage(img, 0, 0);
 
-      if (result && privacyMode && result.box) {
-        if (privacyType === "blur") {
-          ctx.filter = "blur(25px)";
-          ctx.drawImage(
-            canvas,
-            result.box.x,
-            result.box.y,
-            result.box.width,
-            result.box.height,
-            result.box.x,
-            result.box.y,
-            result.box.width,
-            result.box.height
-          );
-          ctx.filter = "none";
-        } else if (privacyType === "emoji") {
-          const emoji = EMOTION_EMOJIS[result.dominant] ?? "😐";
-          ctx.font = "120px system-ui, sans-serif";
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
-          ctx.fillStyle = "rgba(0,0,0,0.4)";
-          ctx.fillRect(
-            result.box.x,
-            result.box.y,
-            result.box.width,
-            result.box.height
-          );
-          ctx.fillText(
-            emoji,
-            result.box.x + result.box.width / 2,
-            result.box.y + result.box.height / 2
-          );
-        }
+      if (showVideo) {
+        ctx.drawImage(img, 0, 0);
+      } else {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
       }
 
-      if (result) drawOverlay(ctx, result);
+      for (const result of results) {
+        if (privacyMode && result.box && showVideo) {
+          if (privacyType === "blur") {
+            ctx.filter = "blur(25px)";
+            ctx.drawImage(
+              canvas,
+              result.box.x,
+              result.box.y,
+              result.box.width,
+              result.box.height,
+              result.box.x,
+              result.box.y,
+              result.box.width,
+              result.box.height
+            );
+            ctx.filter = "none";
+          } else if (privacyType === "emoji") {
+            const emoji = EMOTION_EMOJIS[result.dominant] ?? "😐";
+            ctx.font = "120px system-ui, sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillStyle = "rgba(0,0,0,0.4)";
+            ctx.fillRect(
+              result.box.x,
+              result.box.y,
+              result.box.width,
+              result.box.height
+            );
+            ctx.fillText(
+              emoji,
+              result.box.x + result.box.width / 2,
+              result.box.y + result.box.height / 2
+            );
+          }
+        }
+
+        drawOverlay(ctx, result);
+      }
     }
   }, [
     running,
@@ -437,15 +475,24 @@ export default function CameraFeed({
         />
         <canvas
           ref={canvasRef}
-          className="absolute inset-0 w-full h-full object-contain bg-black"
+          className="absolute inset-0 w-full h-full object-contain"
         />
-        <button
-          type="button"
-          onClick={() => setRunning(false)}
-          className="absolute bottom-3 right-3 px-4 py-2 rounded-lg bg-red-500/90 text-white text-sm font-medium hover:bg-red-500"
-        >
-          Stop camera
-        </button>
+        <div className="absolute bottom-3 right-3 flex gap-2">
+          <button
+            type="button"
+            onClick={takeSnapshot}
+            className={`px-4 py-2 rounded-lg text-white text-sm font-medium hover:opacity-80 transition-opacity backdrop-blur-md bg-white/20 border border-white/50 shadow-lg flex items-center gap-2`}
+          >
+            📸 Snapshot
+          </button>
+          <button
+            type="button"
+            onClick={() => setRunning(false)}
+            className="px-4 py-2 rounded-lg bg-red-500/90 text-white text-sm font-medium hover:bg-red-500"
+          >
+            Stop camera
+          </button>
+        </div>
       </div>
     );
   }
@@ -454,7 +501,7 @@ export default function CameraFeed({
     <div className={`relative w-full h-full rounded-xl overflow-hidden border transition-colors duration-1000 ${theme.border} aspect-video bg-black`}>
       <video
         ref={videoRef}
-        className="absolute inset-0 w-full h-full object-cover"
+        className={`absolute inset-0 w-full h-full object-cover ${showVideo ? "" : "opacity-0 invisible"}`}
         style={{ transform: "scaleX(-1)" }}
         playsInline
         muted
@@ -464,13 +511,22 @@ export default function CameraFeed({
         className="absolute inset-0 w-full h-full object-cover pointer-events-none"
         style={{ transform: "scaleX(-1)" }}
       />
-      <button
-        type="button"
-        onClick={() => setRunning(false)}
-        className="absolute bottom-3 right-3 px-4 py-2 rounded-lg bg-red-500/90 text-white text-sm font-medium hover:bg-red-500"
-      >
-        Stop camera
-      </button>
+      <div className="absolute bottom-3 right-3 flex gap-2 pointer-events-auto">
+        <button
+          type="button"
+          onClick={takeSnapshot}
+          className={`px-4 py-2 rounded-lg text-white text-sm font-medium hover:opacity-80 transition-opacity backdrop-blur-md bg-white/20 border border-white/50 shadow-lg flex items-center gap-2`}
+        >
+          📸 Snapshot
+        </button>
+        <button
+          type="button"
+          onClick={() => setRunning(false)}
+          className="px-4 py-2 rounded-lg bg-red-500/90 text-white text-sm font-medium hover:bg-red-500"
+        >
+          Stop camera
+        </button>
+      </div>
     </div>
   );
 }

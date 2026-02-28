@@ -53,7 +53,7 @@ export function useDebugLog() {
 
   const log = useCallback((msg: string) => {
     const line = `[${new Date().toLocaleTimeString()}] ${msg}`;
-    console.log("[SentientMirror]", msg);
+    console.log("[EmotionDetector]", msg);
     setEntries((prev) => [...prev.slice(-(MAX_LOGS - 1)), line]);
   }, []);
 

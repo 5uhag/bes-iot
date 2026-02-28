@@ -1,8 +1,8 @@
-# Deployment Guide for Sentient-Mirror-OSS
+# Deployment Guide for Emotion Detector
 
 ## 🚨 Important: Vercel Limitation
 
-**Sentient-Mirror-OSS CANNOT be deployed to Vercel** due to technical constraints:
+**Emotion Detector CANNOT be deployed to Vercel** due to technical constraints:
 
 ### Why Vercel Won't Work:
 1. **Webcam Access**: The app uses `cv2.VideoCapture()` which requires direct hardware camera access
@@ -55,7 +55,7 @@
 ```bash
 # On server:
 git clone <your-repo>
-cd sentient-mirror-oss
+cd emotion-detector
 pip install -r requirements.txt
 streamlit run app.py --server.port 8501 --server.address 0.0.0.0
 ```
@@ -92,8 +92,8 @@ CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0
 
 **Build and run:**
 ```bash
-docker build -t sentient-mirror .
-docker run -p 8501:8501 sentient-mirror
+docker build -t emotion-detector .
+docker run -p 8501:8501 emotion-detector
 ```
 
 ---
@@ -131,11 +131,11 @@ This would be a **different app** entirely. Not recommended if you want real-tim
 git init
 
 # 2. Add remote repository
-git remote add origin https://github.com/YOUR_USERNAME/sentient-mirror-oss.git
+git remote add origin https://github.com/YOUR_USERNAME/emotion-detector.git
 
 # 3. Commit and push
 git add .
-git commit -m "Initial commit: Sentient-Mirror-OSS MVP"
+git commit -m "Initial commit: Emotion Detector MVP"
 git push -u origin main
 
 # 4. Go to share.streamlit.io and deploy
@@ -161,7 +161,7 @@ git push -u origin main
 
 ## 🎯 Recommendation
 
-**For Sentient-Mirror-OSS, I recommend:**
+**For Emotion Detector, I recommend:**
 
 1. **Deploy to Streamlit Community Cloud** - It's free, easy, and designed for this
 2. **Keep Vercel for other projects** - It's great for static sites, APIs, and Next.js apps

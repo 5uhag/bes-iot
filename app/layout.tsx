@@ -8,7 +8,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Sentient Mirror OSS — Privacy-First Mood Detection",
+  title: "Emotion Detector — Privacy-First Mood Detection",
   description: "Real-time emotion detection in your browser. No cloud, no uploads.",
 };
 

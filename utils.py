@@ -1,5 +1,5 @@
 """
-Utility functions for Sentient-Mirror-OSS
+Utility functions for Emotion Detector
 Emotion detection, privacy mode, and visualization helpers
 """
 

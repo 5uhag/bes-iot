@@ -23,6 +23,9 @@ export default function Home() {
   const [frameSkip, setFrameSkip] = useState(5);
   const [privacyMode, setPrivacyMode] = useState(false);
   const [privacyType, setPrivacyType] = useState<"blur" | "emoji">("blur");
+  const [showVideo, setShowVideo] = useState(true);
+  const [multiFace, setMultiFace] = useState(false);
+  const [audioFeedback, setAudioFeedback] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [modelsReady, setModelsReady] = useState(false);
   const [modelLoadStep, setModelLoadStep] = useState<string | null>(null);
@@ -71,6 +74,12 @@ export default function Home() {
             setPrivacyMode={setPrivacyMode}
             privacyType={privacyType}
             setPrivacyType={setPrivacyType}
+            showVideo={showVideo}
+            setShowVideo={setShowVideo}
+            multiFace={multiFace}
+            setMultiFace={setMultiFace}
+            audioFeedback={audioFeedback}
+            setAudioFeedback={setAudioFeedback}
           />
         </div>
 
@@ -104,6 +113,8 @@ export default function Home() {
                 frameSkip={frameSkip}
                 privacyMode={privacyMode}
                 privacyType={privacyType}
+                showVideo={showVideo}
+                multiFace={multiFace}
                 onEmotion={setEmotion}
                 onMoodHistory={setMoodHistory}
                 moodHistory={moodHistory}

@@ -18,6 +18,12 @@ type Props = {
   setPrivacyMode: (v: boolean) => void;
   privacyType: "blur" | "emoji";
   setPrivacyType: (v: "blur" | "emoji") => void;
+  showVideo: boolean;
+  setShowVideo: (v: boolean) => void;
+  multiFace: boolean;
+  setMultiFace: (v: boolean) => void;
+  audioFeedback: boolean;
+  setAudioFeedback: (v: boolean) => void;
   theme: Theme;
 };
 
@@ -32,6 +38,12 @@ export default function Settings({
   setPrivacyMode,
   privacyType,
   setPrivacyType,
+  showVideo,
+  setShowVideo,
+  multiFace,
+  setMultiFace,
+  audioFeedback,
+  setAudioFeedback,
   theme,
 }: Props) {
   return (
@@ -132,10 +144,42 @@ export default function Settings({
               </div>
             )}
           </div>
+          <div className={`pt-2 border-t transition-colors duration-1000 ${theme.border}`}>
+            <h3 className="text-xs font-medium text-zinc-300 mb-2">
+              Advanced Features
+            </h3>
+            <label className="flex items-center gap-2 cursor-pointer mb-2">
+              <input
+                type="checkbox"
+                checked={showVideo}
+                onChange={(e) => setShowVideo(e.target.checked)}
+                className={`rounded border-white/20 bg-black/20 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0 transition-colors duration-1000`}
+              />
+              <span className="text-sm text-zinc-300">Show Video Background</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer mb-2">
+              <input
+                type="checkbox"
+                checked={multiFace}
+                onChange={(e) => setMultiFace(e.target.checked)}
+                className={`rounded border-white/20 bg-black/20 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0 transition-colors duration-1000`}
+              />
+              <span className="text-sm text-zinc-300">Multi-Face Detection</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer mb-2">
+              <input
+                type="checkbox"
+                checked={audioFeedback}
+                onChange={(e) => setAudioFeedback(e.target.checked)}
+                className={`rounded border-white/20 bg-black/20 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0 transition-colors duration-1000`}
+              />
+              <span className="text-sm text-zinc-300">Ambient Audio Feedback</span>
+            </label>
+          </div>
         </div>
       </div>
       <div className={`pt-4 border-t text-xs text-zinc-500 space-y-1 transition-colors duration-1000 ${theme.border}`}>
-        <p className="font-medium text-zinc-400">Sentient Mirror OSS</p>
+        <p className="font-medium text-zinc-400">Emotion Detector</p>
         <p>100% local processing in your browser. No cloud, no uploads.</p>
       </div>
     </div>

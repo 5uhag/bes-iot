@@ -1,4 +1,4 @@
-# Sentient Mirror OSS — IoT Project Walkthrough
+# Emotion Detector — IoT Project Walkthrough
 
 Use this as a **cheat sheet** when you present or explain the project (e.g. for a course, demo, or report).
 
@@ -6,7 +6,7 @@ Use this as a **cheat sheet** when you present or explain the project (e.g. for 
 
 ## 1. What is this project?
 
-**Sentient Mirror** is a **privacy-first, real-time mood (emotion) detector**. It uses a camera as the “sensor,” runs **face and emotion AI entirely in the browser** (on your device), and shows live feedback plus a 60-second mood trend. No cloud, no uploads — it fits an **IoT / edge** style setup where the “smart” processing happens on the user’s device.
+**Emotion Detector** is a **privacy-first, real-time mood (emotion) detector**. It uses a camera as the “sensor,” runs **face and emotion AI entirely in the browser** (on your device), and shows live feedback plus a 60-second mood trend. No cloud, no uploads — it fits an **IoT / edge** style setup where the “smart” processing happens on the user’s device.
 
 - **Input:** Video from a webcam or from your **phone used as an IP camera**.
 - **Output:** Live emotion label (happy, sad, angry, etc.), confidence, and a 60s mood chart.
